@@ -1,0 +1,73 @@
+<?php
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityFieldManager;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Session\AccountInterface;
+
+/**
+ * Implements hook_help().
+ * @TODO Add some usage instructions
+ */
+function workbench_access_taxonomy_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.workbench_access_taxonomy':
+      return t('
+        <h2>Workbench Access extension for Taxonomy</h2>
+        <h3>About</h3>
+        <p>This module extends Workbench Access functionality to control 
+        access to editing taxonomies.</p>
+      ');
+  }
+}
+
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ */
+function workbench_access_taxonomy_taxonomy_term_access(EntityInterface $entity, $op, AccountInterface $account) {
+  // We don't care about viewing
+  if ($op == 'view' || $account->hasPermission('bypass workbench access')) {
+    return AccessResult::neutral();
+  }
+  
+  // Check that workbench access control is configured with active scheme set to Taxonomy
+  $manager = \Drupal::service('plugin.manager.workbench_access.scheme');
+  $workbench_access_control = $manager->getActiveScheme();
+  
+  if ($workbench_access_control->id() != 'taxonomy') {
+    return AccessResult::neutral();
+  }
+  
+  // Check if access control field exists
+  $vocabulary = $entity->bundle();
+  $entityManager = \Drupal::service('entity_field.manager');
+  // Get all fields on the vocabulary
+  $fields = $entityManager->getFieldDefinitions('taxonomy_term', $vocabulary);
+  
+  if (array_key_exists('field_department_or_unit', $fields)) { // @TODO Get field from workbench access module
+    // Compare the value in taxonomy to value in user
+    $term_sections = $workbench_access_control->getEntityValues($entity, 'field_department_or_unit'); // @TODO Get field from workbench access module
+    // If no value is set on the entity, ignore.
+    if (empty($term_sections)) {
+      return AccessResult::neutral();
+    }
+    
+    // Get user's sections
+    $userSectionStorage = \Drupal::service('workbench_access.user_section_storage');
+    $user_sections = $userSectionStorage->getUserSections();
+    if (empty($user_sections)) {
+      return AccessResult::forbidden();
+    }
+    
+    // Check the tree status of the $entity against the $user.
+    // Return neutral if in tree, forbidden if not.
+    if ($manager->checkTree($term_sections, $user_sections)) {
+      return AccessResult::neutral();
+    }
+    return AccessResult::forbidden();
+  }
+  
+  return AccessResult::neutral();
+}
