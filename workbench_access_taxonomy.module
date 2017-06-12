@@ -25,14 +25,25 @@ function workbench_access_taxonomy_help($route_name, RouteMatchInterface $route_
 
 /**
  * Implements hook_ENTITY_TYPE_access().
+ *
+ * Checks if editing or deleting taxonomy
+ * Makes sure workbench access control is configured for Taxonomy scheme
+ * Checks if access control field exists on the taxonomy term that is touched
+ * 
  */
 function workbench_access_taxonomy_taxonomy_term_access(EntityInterface $entity, $op, AccountInterface $account) {
+  // Get access control field machine name from the settings
+  $config = \Drupal::config('workbench_access_taxonomy.settings');
+  $access_control_field = $config->get('workbench_access_taxonomy.access_control_field');
+  
   // We don't care about viewing
   if ($op == 'view' || $account->hasPermission('bypass workbench access')) {
     return AccessResult::neutral();
   }
   
+  //
   // Check that workbench access control is configured with active scheme set to Taxonomy
+  //
   $manager = \Drupal::service('plugin.manager.workbench_access.scheme');
   $workbench_access_control = $manager->getActiveScheme();
   
@@ -40,16 +51,19 @@ function workbench_access_taxonomy_taxonomy_term_access(EntityInterface $entity,
     return AccessResult::neutral();
   }
   
-  // Check if access control field exists
+  //
+  // Check if access control field exists, compare its value to the user's sections
+  //
+  // Get entity's vocabulary
   $vocabulary = $entity->bundle();
   $entityManager = \Drupal::service('entity_field.manager');
   // Get all fields on the vocabulary
   $fields = $entityManager->getFieldDefinitions('taxonomy_term', $vocabulary);
-  
-  if (array_key_exists('field_department_or_unit', $fields)) { // @TODO Get field from workbench access module
-    // Compare the value in taxonomy to value in user
-    $term_sections = $workbench_access_control->getEntityValues($entity, 'field_department_or_unit'); // @TODO Get field from workbench access module
-    // If no value is set on the entity, ignore.
+  // See if access control field exists on the vocabulary
+  if (array_key_exists($access_control_field, $fields)) {
+    // Get all sections that the term is assigned to
+    $term_sections = $workbench_access_control->getEntityValues($entity, $access_control_field);
+    // If no value is set on the term, ignore (no sections assigned)
     if (empty($term_sections)) {
       return AccessResult::neutral();
     }
@@ -61,7 +75,7 @@ function workbench_access_taxonomy_taxonomy_term_access(EntityInterface $entity,
       return AccessResult::forbidden();
     }
     
-    // Check the tree status of the $entity against the $user.
+    // Check the tree of sections of the term against the $user.
     // Return neutral if in tree, forbidden if not.
     if ($manager->checkTree($term_sections, $user_sections)) {
       return AccessResult::neutral();
