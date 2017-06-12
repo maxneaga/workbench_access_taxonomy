@@ -16,8 +16,12 @@ function workbench_access_taxonomy_help($route_name, RouteMatchInterface $route_
       return t('
         <h2>Workbench Access extension for Taxonomy</h2>
         <h3>About</h3>
-        <p>This module extends Workbench Access functionality to control 
-        access to editing taxonomies.</p>
+        <p>This module extends 
+        <a href="https://www.drupal.org/project/workbench_access">Workbench Access</a> 
+        functionality to control access to editing taxonomies.</p>
+        <h3>Usage</h3>
+        <p>Upon installation, module configuration is available under the 
+        "Taxonomy" tab of the general Workbench Access settings.</p>
       ');
   }
 }
