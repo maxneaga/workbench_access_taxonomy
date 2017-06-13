@@ -5,6 +5,9 @@ namespace Drupal\workbench_access_taxonomy\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
+/**
+ * Class WorkbenchAccessTaxonomyConfigForm.
+ */
 class WorkbenchAccessTaxonomyConfigForm extends ConfigFormBase {
 
   /**
@@ -32,13 +35,13 @@ class WorkbenchAccessTaxonomyConfigForm extends ConfigFormBase {
       <li>Enter that field\'s machine name in the field below.</li>
     </ol>');
 
-    // Access control field
-    $form['access_control_field'] = array(
+    // Access control field.
+    $form['access_control_field'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Access control field machine name:'),
       '#default_value' => $config->get('workbench_access_taxonomy.access_control_field'),
       '#description' => $this->t('Machine name of the access control field on your taxonomies.'),
-    );
+    ];
 
     return $form;
   }
