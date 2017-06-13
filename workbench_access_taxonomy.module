@@ -8,7 +8,6 @@ use Drupal\Core\Session\AccountInterface;
 
 /**
  * Implements hook_help().
- * @TODO Add some usage instructions
  */
 function workbench_access_taxonomy_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
